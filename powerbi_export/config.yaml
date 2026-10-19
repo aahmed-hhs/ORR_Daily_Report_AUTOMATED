@@ -1,0 +1,103 @@
+# Settings for powerbi-export. Paths may be absolute or relative to this file.
+
+# Edge you started with --remote-debugging-port=9222 (same one powerbi-report uses).
+cdp_url: "http://127.0.0.1:9222"
+
+# The report. The script opens this once, then clicks tabs in the Pages pane.
+report_url: "https://app.powerbigov.us/groups/5fa562e1-a9cc-4509-8e01-04b8d0631886/reports/e29710f1-ad9f-4a8b-84b0-e740b4964e04/68f6cd2feb07025e2311?ctid=d58addea-5053-4a80-8499-ba4d944910df"
+
+output_dir: "output/{date}"
+
+# Size the report is rendered at inside the tab, independent of the Edge window.
+viewport:
+  width: 2200
+  height: 1300
+
+render_wait_ms: 8000        # time for visuals to finish drawing after a page/tab change
+download_timeout_ms: 180000 # Power BI can take a while to build large exports
+
+# Workbook layout applied to every download (can be overridden per export):
+#   classic = headers in row 1, data, blank row, "Applied filters" note at the
+#             bottom, sheet named "Export", long-date format on date columns
+#   raw     = exactly as Power BI downloaded it
+layout: classic
+sheet_name: Export
+
+# One entry per spreadsheet. For each, the script:
+#   1. clicks the tab named page_name in the Pages pane (left side)
+#   2. presses click_button (optional), e.g. a bookmark button
+#   3. hovers the visual that shows visual_text and opens its "..." menu
+#   4. chooses Export data -> data type -> format -> Export, saves the file
+# Fields:
+#   page_name:    exact tab text
+#   click_button: optional button/bookmark text to press first
+#   visual_text:  text shown inside the visual (case-insensitive)
+#   data:         layout | summarized | underlying
+#                 layout = "Data with current layout" (the table exactly as shown,
+#                 xlsx only); falls back to the next option if one is greyed out
+#   format:       xlsx | csv
+#   filename:     {date} becomes YYYYMMDD; omit for <name>_{date}.<format>
+exports:
+  - name: uacb_master
+    page_name: "UACB Deliverable"
+    click_button: "UACB MASTER"
+    visual_text: "DATE IAB RECEIVED THE CASE"
+    data: layout
+    format: xlsx
+    filename: "UACB/UACB MASTER.xlsx"
+
+  - name: uacb_today
+    page_name: "UACB Deliverable"
+    click_button: "UACB Today"
+    visual_text: "DATE IAB RECEIVED THE CASE"
+    data: layout
+    format: xlsx
+    filename: "UACB/UACB TODAY.xlsx"
+
+  - name: uacb_not_sent
+    page_name: "UACB Deliverable"
+    click_button: "UACB Not Sent"
+    visual_text: "DATE IAB RECEIVED THE CASE"
+    data: layout
+    format: xlsx
+    filename: "UACB/UACB NOT SENT.xlsx"
+
+  - name: uacb_closed
+    page_name: "UACB Deliverable"
+    click_button: "UACB Closed"
+    visual_text: "DATE IAB RECEIVED THE CASE"
+    data: layout
+    format: xlsx
+    filename: "UACB/UACB CLOSED.xlsx"
+
+  - name: hsi_master
+    page_name: "HSI Deliverable"
+    click_button: "HSI MASTER"
+    visual_text: "DATE DATA SUMMARY SENT TO HSI"
+    data: layout
+    format: xlsx
+    filename: "HSI/HSI MASTER.xlsx"
+
+  - name: hsi_today
+    page_name: "HSI Deliverable"
+    click_button: "HSI TODAY"
+    visual_text: "DATE DATA SUMMARY SENT TO HSI"
+    data: layout
+    format: xlsx
+    filename: "HSI/HSI TODAY.xlsx"
+
+  - name: hsi_not_sent
+    page_name: "HSI Deliverable"
+    click_button: "HSI NOT SENT"
+    visual_text: "DATE DATA SUMMARY SENT TO HSI"
+    data: layout
+    format: xlsx
+    filename: "HSI/HSI NOT SENT.xlsx"
+
+  - name: hsi_closed
+    page_name: "HSI Deliverable"
+    click_button: "HSI CLOSED"
+    visual_text: "DATE DATA SUMMARY SENT TO HSI"
+    data: layout
+    format: xlsx
+    filename: "HSI/HSI CLOSED.xlsx"

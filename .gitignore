@@ -1,0 +1,22 @@
+# Virtual environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Run artefacts - these contain PII and are machine-specific
+logs/
+*.log
+powerbi_export/output/
+powerbi_report/output/
+powerbi_report/secrets/
+ach-orr-daily-reports/Data Sources/*
+!ach-orr-daily-reports/Data Sources/.gitkeep
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

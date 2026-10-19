@@ -1,0 +1,79 @@
+# Settings for powerbi-report. Paths may be absolute or relative to this file.
+report_url: "https://app.powerbigov.us/groups/5fa562e1-a9cc-4509-8e01-04b8d0631886/reports/e29710f1-ad9f-4a8b-84b0-e740b4964e04/4a2be09cdba929dded3e?ctid=d58addea-5053-4a80-8499-ba4d944910df"
+template: "templates/report_template.docx"
+output_dir: "output"
+auth_file: "secrets/auth.json"
+
+# Attach to an Edge you started yourself with scripts\start_edge_debug.bat.
+# That Edge uses a dedicated profile folder (see the .bat) which you sign into
+# your work account once. Leave it open while the tool runs.
+# Comment this line out to let Playwright launch its own browser instead.
+cdp_url: "http://127.0.0.1:9222"
+
+# Persistent Playwright-owned profile. Only used when cdp_url is commented out.
+# profile_dir: "secrets/edge-profile"
+
+# Which browser Playwright drives when it launches its own ("msedge"/"chrome"
+# use the installed copy; blank = Playwright's downloaded Chromium).
+browser_channel: "msedge"
+
+viewport:
+  width: 1920
+  height: 1080
+
+# Cropping. By default the screenshot is trimmed to the box that encloses all
+# the visuals on the page (title, table, cards...) plus crop_padding pixels,
+# which drops Power BI's toolbars and panes. To force an exact region instead,
+# uncomment crop and give pixel coordinates within the viewport.
+crop_padding: 12
+# Extra pixels to shave off individual edges of the final box (auto or manual).
+crop_trim:
+  top: 2
+  right: 5
+  bottom: 0
+  left: 0
+# Visuals whose text contains any of these phrases are left out of the
+# auto-crop (case-insensitive). Used to drop the footnote under the table.
+crop_exclude_text:
+  - "PLEASE NOTE"
+# crop:
+#   x: 300
+#   y: 150
+#   width: 1300
+#   height: 540
+
+image_width_inches: 6.5     # fits inside 1" margins on letter paper
+render_wait_ms: 10000       # extra time for visuals to finish drawing
+# Date printed in the document. "next_weekday" = the next business day after
+# the run date (Thu -> Fri, Fri -> Mon). Other options: "today", "tomorrow".
+report_date: "next_weekday"
+date_format: "%A, %m/%d/%Y"      # e.g. Friday, 10/16/2026
+
+placeholders:
+  image: "{{DASHBOARD}}"
+  date: "{{DATE}}"
+
+# Name of the Word file written to output_dir. {date} = the day the tool runs,
+# {report_date} = the date printed inside the document (see report_date above).
+# Both use output_date_format. Can also be set per page below.
+output_name: "FO Deliverable {report_date}.docx"
+output_date_format: "%Y-%m-%d"
+
+# Report pages to capture, in order, all in one browser session.
+#   name      tab name as shown at the bottom/side of the report (used to click it)
+#   url       optional: open this URL instead of clicking the tab (copy it from
+#             the address bar while that tab is showing). More reliable than
+#             clicking if the tab name ever changes.
+#   file      base name of the PNG written to output_dir (-> file_YYYYMMDD.png)
+#   template  Word template to fill, or omit/null for a screenshot only.
+#   crop, crop_padding, crop_trim, crop_exclude_text may be set per page to
+#   override the global values above.
+# If this list is removed, the tool behaves as before: one page, one template.
+pages:
+  - name: "Daily Metrics"
+    file: "dashboard"
+    template: "templates/report_template.docx"
+  - name: "SSN Verification Report"
+    file: "ssn_verification"
+    template: null
+    # url: "https://app.powerbigov.us/groups/.../reports/.../<page-id>?ctid=..."

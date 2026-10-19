@@ -1,0 +1,7 @@
+# Everything the pipeline needs, installed into one .venv by setup.bat.
+# (The bundled ach-orr-daily-reports scripts are run in place, not installed;
+#  pandas + openpyxl below are what they need.)
+-e ./powerbi_export
+-e ./powerbi_report
+pandas>=2.2
+openpyxl>=3.1

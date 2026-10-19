@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "powerbi-export"
+version = "0.1.0"
+description = "Download the data behind Power BI visuals as .xlsx/.csv by driving the Export data menu."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Ahmed Ahmed" }]
+dependencies = [
+    "playwright>=1.45",
+    "pyyaml>=6.0",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+powerbi-export = "powerbi_export.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

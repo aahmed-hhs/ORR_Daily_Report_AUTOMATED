@@ -1,0 +1,15 @@
+# ORR Daily Pipeline settings. Paths may use ~ for your home folder.
+# Everything here has a sensible default; most people never need to edit this file.
+
+# Where the ach-orr-daily-reports scripts live (run_daily_reports.py builds the
+# HSI / UACB Daily workbooks; its "Data Sources" folder collects each day's files).
+# Default: the copy bundled in this repo (.\ach-orr-daily-reports). Uncomment to use
+# a separate checkout instead, e.g. one that already holds your Data Sources history.
+# ach_repo: ~/local_files/projects/orr-daily-reports/ach-orr-daily-reports
+
+# Dedicated Edge profile used for the remote-debugging session (sign in once).
+edge_profile: ~/local_files/edge-debug
+
+# Port the debug Edge listens on (must match cdp_url in powerbi_export/config.yaml
+# and powerbi_report/config.yaml).
+cdp_port: 9222

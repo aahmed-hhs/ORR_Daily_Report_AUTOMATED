@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "powerbi-report"
+version = "0.2.0"
+description = "Capture a Power BI report page and insert it into a Word template."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Ahmed Ahmed" }]
+dependencies = [
+    "playwright>=1.45",
+    "python-docx>=1.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+    "pillow>=10.0",
+]
+
+[project.scripts]
+powerbi-report = "powerbi_report.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
