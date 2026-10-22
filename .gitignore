@@ -6,6 +6,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Per-machine settings
+pipeline.local.yaml
+
 # Run artefacts - these contain PII and are machine-specific
 logs/
 *.log

@@ -7,6 +7,7 @@ scheduled task and this window always behave the same way.
 from __future__ import annotations
 
 import datetime as dt
+import importlib
 import os
 import queue
 import subprocess
@@ -41,6 +42,7 @@ class App(tk.Tk):
         self.q: queue.Queue[tuple[str, object]] = queue.Queue()
 
         self.opt_edge = tk.BooleanVar(value=True)
+        self.opt_refresh = tk.BooleanVar(value=True)
         self.opt_skip_export = tk.BooleanVar(value=False)
         self.opt_skip_report = tk.BooleanVar(value=False)
 
@@ -70,13 +72,15 @@ class App(tk.Tk):
         head.pack(fill="x")
         ttk.Label(head, text="ORR Daily Pipeline", style="Title.TLabel").pack(anchor="w")
         ttk.Label(head, style="Sub.TLabel",
-                  text=f"Power BI export  >  report capture  >  {rp.day_folder_for()}  >  HSI / UACB Daily workbooks"
+                  text=f"Model refresh  >  Power BI export  >  report capture  >  {rp.day_folder_for()}  >  HSI / UACB Daily workbooks"
                   ).pack(anchor="w")
 
         opts = ttk.Frame(self, padding=(18, 6))
         opts.pack(fill="x")
         ttk.Checkbutton(opts, text="Start the debug Edge first (closes any open Edge windows)",
                         variable=self.opt_edge).pack(anchor="w")
+        ttk.Checkbutton(opts, text="Refresh the semantic model before exporting (waits for it to finish)",
+                        variable=self.opt_refresh).pack(anchor="w")
         ttk.Checkbutton(opts, text="Skip Power BI export (reuse today's HSI / UACB files)",
                         variable=self.opt_skip_export).pack(anchor="w")
         ttk.Checkbutton(opts, text="Skip report capture (reuse today's PNGs and Word doc)",
@@ -105,9 +109,12 @@ class App(tk.Tk):
 
     # ------------------------------------------------------------------ actions
     def run_pipeline(self) -> None:
+        importlib.reload(rp)
         args = ["--no-open"]
         if self.opt_edge.get():
             args.append("--start-edge")
+        if not self.opt_refresh.get():
+            args.append("--no-refresh")
         if self.opt_skip_export.get():
             args.append("--skip-export")
         if self.opt_skip_report.get():
@@ -124,8 +131,20 @@ class App(tk.Tk):
             self._append("Stopped by user.\n", "err")
 
     def open_folder(self) -> None:
+        importlib.reload(rp)                      # pick up pipeline.yaml / pipeline.local.yaml changes
         folder = rp.day_folder_for()
-        target = folder if folder.exists() else (DATA_SOURCES if DATA_SOURCES.exists() else HERE)
+        if folder.exists():
+            target = folder
+        elif rp.DATA_SOURCES.exists():
+            target = rp.DATA_SOURCES
+        elif rp.ACH_REPO.exists():
+            target = rp.ACH_REPO
+        else:
+            messagebox.showerror("Folder not found",
+                                 f"ach-orr-daily-reports was not found at:\n{rp.ACH_REPO}\n\n"
+                                 "Check ach_repo in pipeline.yaml / pipeline.local.yaml.")
+            return
+        self._set_status(f"Opened {target}", MUTED)
         os.startfile(target)  # type: ignore[attr-defined]
 
     def open_log(self) -> None:

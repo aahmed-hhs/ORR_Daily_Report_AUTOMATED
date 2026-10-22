@@ -44,6 +44,7 @@ class Settings:
     crop_exclude_text: list
     crop_trim: dict
     output_date_format: str = "%Y%m%d"
+    page_view: str | None = "Fit to page"
     pages: list = field(default_factory=list)
 
 
@@ -127,5 +128,6 @@ def load(path: Path | None = None) -> Settings:
         crop_exclude_text=crop_exclude_text,
         crop_trim=crop_trim,
         output_date_format=str(raw.get("output_date_format") or "%Y%m%d"),
+        page_view=(raw.get("page_view") if "page_view" in raw else "Fit to page") or None,
         pages=pages,
     )

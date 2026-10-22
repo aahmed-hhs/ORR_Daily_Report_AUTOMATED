@@ -44,6 +44,9 @@ crop_exclude_text:
 
 image_width_inches: 6.5     # fits inside 1" margins on letter paper
 render_wait_ms: 10000       # extra time for visuals to finish drawing
+# Power BI's own zoom (View menu). Applied once per run so the crop is always the same:
+# "Fit to page" | "Fit to width" | "Actual size" | null = leave whatever the window has.
+page_view: "Fit to page"
 # Date printed in the document. "next_weekday" = the next business day after
 # the run date (Thu -> Fri, Fri -> Mon). Other options: "today", "tomorrow".
 report_date: "next_weekday"

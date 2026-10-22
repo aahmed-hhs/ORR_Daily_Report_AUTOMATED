@@ -3,7 +3,8 @@
 One click that produces the IAB Division of Vetting daily deliverables:
 
 1. starts a dedicated Edge window with remote debugging (the only way Power BI GCC lets a script in),
-2. **powerbi-export** downloads the HSI and UACB deliverable tables (MASTER / TODAY / NOT SENT / CLOSED) as Excel,
+2. **powerbi-export** refreshes the report's semantic model (report "…" menu → View semantic model →
+   Refresh now) and waits for it to finish, then downloads the HSI and UACB deliverable tables (MASTER / TODAY / NOT SENT / CLOSED) as Excel,
 3. **powerbi-report** screenshots the *Daily Metrics* and *SSN Verification Report* pages and fills the Word template,
 4. copies everything into `ach-orr-daily-reports\Data Sources\MM-DD-YYYY\`,
 5. runs the bundled `run_daily_reports.py` (from the ORR IAB **ach-orr-daily-reports** project) to build
@@ -34,8 +35,8 @@ The Word document and the two Daily workbooks are what you upload to SharePoint.
    **ORR Daily Pipeline** shortcut (the duck) on your Desktop.
 
    The `ach-orr-daily-reports` scripts that build the Daily workbooks are bundled in this repo. If you
-   already keep a separate copy with your `Data Sources` history, point `ach_repo:` in `pipeline.yaml`
-   at it before running `setup.bat`.
+   already keep a separate copy with your `Data Sources` history, create a `pipeline.local.yaml` next to
+   `pipeline.yaml` containing `ach_repo: <path to that folder>` (this file stays out of git).
 
 3. Open the duck, click **Start Edge only**, and sign in to Power BI in the Edge window that appears.
    This Edge uses its own profile folder (`%USERPROFILE%\local_files\edge-debug`) and remembers you,
@@ -48,6 +49,7 @@ Open the duck and click **Run today's pipeline**. Leave the three checkboxes as 
 | Checkbox | What it does |
 |---|---|
 | Start the debug Edge first | Closes any open Edge windows and starts the debug profile on the report. Untick if it's already running. |
+| Refresh the semantic model before exporting | Triggers a dataset refresh and waits (up to 1 min, see `powerbi_export\config.yaml` → `refresh:`) so the exports contain today's data. Untick to export whatever is already there. |
 | Skip Power BI export | Reuse today's HSI/UACB downloads (handy when re-running after a small fix). |
 | Skip report capture | Reuse today's PNGs and Word doc. |
 
@@ -56,7 +58,7 @@ Progress streams into the window; the bar at the bottom turns green when done an
 afterwards. Re-running on the same day is safe – files are overwritten and the previous Daily workbook
 is removed before the new one is built.
 
-Prefer the terminal? `run_pipeline.bat --start-edge` does the same thing (add `--skip-export`,
+Prefer the terminal? `run_pipeline.bat --start-edge` does the same thing (add `--no-refresh`, `--skip-export`,
 `--skip-report` as needed). From Git Bash use `./run_pipeline.bat ...`.
 
 ### Run it on a schedule
@@ -77,6 +79,8 @@ so pick a time you are not working in Edge.
 | *The debug Edge is not running* | Tick **Start the debug Edge first**, or click **Start Edge only**. |
 | *Power BI asked for sign-in (tab is on …)* | Your session expired. Sign in in the Edge window, then press Run again with the Edge checkbox unticked. |
 | *The report page loaded but no visuals appeared* | Look at `powerbi_export\output\debug_page.png` – usually a Power BI banner or dialog is in the way. Close it in the Edge window and re-run. |
+| *Refresh: could not find …* | Power BI changed its menus. Run the refresh alone to see it happen: `powerbi_export> ..\.venv\Scripts\powerbi-export.exe --refresh-only`; a screenshot is saved under `powerbi_export\output\<date>\`. |
+| *Refresh: not confirmed within 1 min* | The run continues anyway. Raise `timeout_minutes` in `powerbi_export\config.yaml` if refreshes are normally slow. |
 | *Cannot overwrite … it is open in Word/Excel* | Close that file and re-run. |
 | *Could not find a page tab / button / visual named …* | The report layout changed. Update the names in `powerbi_export\config.yaml` or `powerbi_report\config.yaml`. |
 | *ach-orr-daily-reports not found* | Fix `ach_repo` in `pipeline.yaml`, or re-download this repo if the bundled folder is missing. |

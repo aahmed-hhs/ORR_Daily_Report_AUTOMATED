@@ -1,7 +1,7 @@
 """ORR Daily Pipeline - one command that runs the whole morning routine.
 
     1. Make sure the debug Edge (remote-debugging port) is running.
-    2. powerbi-export   -> HSI / UACB workbooks                 (powerbi_export\\)
+    2. powerbi-export   -> refresh the semantic model, then HSI / UACB workbooks (powerbi_export\\)
     3. powerbi-report   -> dashboard PNGs + FO Deliverable docx  (powerbi_report\\)
     4. Copy those outputs into  ach-orr-daily-reports\\Data Sources\\MM-DD-YYYY\\{HSI,UACB}\\
     5. run_daily_reports.py from the bundled ach-orr-daily-reports folder
@@ -28,6 +28,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------- settings
 HERE = Path(__file__).resolve().parent
 SETTINGS_FILE = HERE / "pipeline.yaml"
+LOCAL_SETTINGS_FILE = HERE / "pipeline.local.yaml"   # per-machine overrides, git-ignored
 
 DEFAULTS = {
     "ach_repo": str(HERE / "ach-orr-daily-reports"),   # bundled copy; override in pipeline.yaml
@@ -39,8 +40,10 @@ DEFAULTS = {
 def _read_settings() -> dict[str, str]:
     """Tiny 'key: value' reader so this file has no third-party imports."""
     out = dict(DEFAULTS)
-    if SETTINGS_FILE.exists():
-        for line in SETTINGS_FILE.read_text(encoding="utf-8").splitlines():
+    for f in (SETTINGS_FILE, LOCAL_SETTINGS_FILE):
+        if not f.exists():
+            continue
+        for line in f.read_text(encoding="utf-8").splitlines():
             line = line.split("#", 1)[0].strip()
             if ":" in line:
                 k, v = line.split(":", 1)
@@ -149,6 +152,27 @@ def start_url() -> str:
     return "https://app.powerbigov.us/"
 
 
+def reset_edge_zoom(log: Log) -> None:
+    """Edge remembers zoom per site in the profile. Clear it so every run captures at 100%.
+    Only safe while Edge is closed (Edge rewrites the file on exit)."""
+    import json
+    prefs = EDGE_PROFILE / "Default" / "Preferences"
+    if not prefs.exists():
+        return
+    try:
+        data = json.loads(prefs.read_text(encoding="utf-8"))
+        part = data.get("partition") or {}
+        had = bool(part.get("per_host_zoom_levels")) or "default_zoom_level" in part
+        part.pop("per_host_zoom_levels", None)
+        part.pop("default_zoom_level", None)
+        if had:
+            data["partition"] = part
+            prefs.write_text(json.dumps(data), encoding="utf-8")
+            log("Reset the debug Edge's saved zoom to 100%.")
+    except Exception as e:  # noqa: BLE001
+        log(f"(could not reset Edge zoom: {e})")
+
+
 def start_edge(log: Log) -> bool:
     """Start Edge with remote debugging on a dedicated profile (closes any running Edge first)."""
     edge = find_edge()
@@ -159,6 +183,7 @@ def start_edge(log: Log) -> bool:
     log("Closing any running Edge and starting the debug profile...")
     subprocess.run(["taskkill", "/F", "/IM", "msedge.exe"], capture_output=True)
     time.sleep(3)
+    reset_edge_zoom(log)
     subprocess.Popen([str(edge), f"--remote-debugging-port={CDP_PORT}", f"--user-data-dir={EDGE_PROFILE}",
                       start_url()],
                      creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
@@ -212,10 +237,10 @@ def copy(src: Path, dst: Path, log: Log) -> Path:
 
 
 # --------------------------------------------------------------------------- steps
-def step_export(log: Log, skip: bool) -> Path:
-    log("=== Step 1/4: powerbi-export (HSI / UACB workbooks) ===")
+def step_export(log: Log, skip: bool, refresh: bool = True) -> Path:
+    log("=== Step 1/4: powerbi-export (semantic model refresh + HSI / UACB workbooks) ===")
     if not skip:
-        run_tool([str(EXPORT_EXE)], EXPORT_PROJECT, log)
+        run_tool([str(EXPORT_EXE)] + ([] if refresh else ["--no-refresh"]), EXPORT_PROJECT, log)
     else:
         log("skipped (--skip-export); reusing existing files")
     folder = EXPORT_OUTPUT / f"{dt.date.today():%Y-%m-%d}"
@@ -291,6 +316,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Export from Power BI, capture the report, build the daily workbooks.")
     ap.add_argument("--skip-export", action="store_true", help="reuse today's powerbi-export output")
     ap.add_argument("--skip-report", action="store_true", help="reuse today's powerbi-report output")
+    ap.add_argument("--no-refresh", action="store_true",
+                    help="do not refresh the semantic model before exporting")
     ap.add_argument("--start-edge", action="store_true",
                     help="if the debug Edge is not running, start it (closes any open Edge windows)")
     ap.add_argument("--edge-only", action="store_true",
@@ -329,7 +356,7 @@ def main() -> None:
             )
 
     t0 = time.time()
-    export_folder = step_export(log, args.skip_export)
+    export_folder = step_export(log, args.skip_export, refresh=not args.no_refresh)
     step_report(log, args.skip_report)
     step_stage(log, export_folder, day_folder, report_date)
     step_daily_reports(log)

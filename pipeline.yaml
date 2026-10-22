@@ -1,5 +1,7 @@
 # ORR Daily Pipeline settings. Paths may use ~ for your home folder.
 # Everything here has a sensible default; most people never need to edit this file.
+# For machine-specific values, create pipeline.local.yaml next to this file with the
+# same keys - it overrides this file and is ignored by git.
 
 # Where the ach-orr-daily-reports scripts live (run_daily_reports.py builds the
 # HSI / UACB Daily workbooks; its "Data Sources" folder collects each day's files).

@@ -387,13 +387,21 @@ def export_visual(page: Page, job: ExportJob, out_path: Path, download_timeout_m
     return out_path
 
 
-def run(s: Settings, only: str | None = None) -> list[Path]:
+def run(s: Settings, only: str | None = None, refresh: bool | None = None, refresh_only: bool = False) -> list[Path]:
     jobs = [j for j in s.exports if not only or j.name == only]
-    if not jobs:
+    if not jobs and not refresh_only:
         raise SystemExit("Nothing to export" + (f" named {only!r}" if only else " (add entries under exports: in config.yaml)"))
+    do_refresh = s.refresh_enabled if refresh is None else refresh
     today = dt.date.today()
     saved: list[Path] = []
     with attached_page(s.cdp_url, viewport=s.viewport) as page:
+        if do_refresh or refresh_only:
+            from .refresh import refresh_semantic_model
+            refresh_semantic_model(page, s.report_url, s.render_wait_ms, s.refresh_timeout_min,
+                                   wait=s.refresh_wait, fail_on_timeout=s.refresh_fail_on_timeout,
+                                   debug_dir=s.output_dir)
+            if refresh_only:
+                return saved
         current_url, current_tab = None, None
         for job in jobs:
             url = job.page_url or s.report_url

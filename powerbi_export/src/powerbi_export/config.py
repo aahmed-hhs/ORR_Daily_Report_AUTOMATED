@@ -32,6 +32,10 @@ class Settings:
     render_wait_ms: int
     download_timeout_ms: int
     exports: list[ExportJob]
+    refresh_enabled: bool = False
+    refresh_wait: bool = True
+    refresh_timeout_min: int = 1
+    refresh_fail_on_timeout: bool = False
 
 
 def load(path: Path | None = None) -> Settings:
@@ -62,6 +66,7 @@ def load(path: Path | None = None) -> Settings:
             format=str(e.get("format", "xlsx")).lower().lstrip("."),
             filename=e.get("filename"),
         ))
+    r = raw.get("refresh") or {}
     return Settings(
         cdp_url=raw.get("cdp_url", "http://127.0.0.1:9222"),
         report_url=raw.get("report_url", ""),
@@ -70,4 +75,8 @@ def load(path: Path | None = None) -> Settings:
         render_wait_ms=int(raw.get("render_wait_ms", 8000)),
         download_timeout_ms=int(raw.get("download_timeout_ms", 180000)),
         exports=jobs,
+        refresh_enabled=bool(r.get("enabled", False)),
+        refresh_wait=bool(r.get("wait", True)),
+        refresh_timeout_min=int(r.get("timeout_minutes", 1)),
+        refresh_fail_on_timeout=bool(r.get("fail_on_timeout", False)),
     )

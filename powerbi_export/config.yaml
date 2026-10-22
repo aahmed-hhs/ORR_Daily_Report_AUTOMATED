@@ -16,6 +16,15 @@ viewport:
 render_wait_ms: 8000        # time for visuals to finish drawing after a page/tab change
 download_timeout_ms: 180000 # Power BI can take a while to build large exports
 
+# Refresh the report's semantic model before exporting (report "..." menu ->
+# View semantic model -> Refresh -> Refresh now), then wait for it to finish so
+# the exports contain fresh data. Override per run with --refresh / --no-refresh.
+refresh:
+  enabled: true
+  wait: true               # false = trigger the refresh and export immediately
+  timeout_minutes: 1       # how long to wait for the refresh to complete
+  fail_on_timeout: false   # true = stop the run if the refresh is not done in time
+
 # Workbook layout applied to every download (can be overridden per export):
 #   classic = headers in row 1, data, blank row, "Applied filters" note at the
 #             bottom, sheet named "Export", long-date format on date columns

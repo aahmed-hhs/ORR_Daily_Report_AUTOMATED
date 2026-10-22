@@ -220,6 +220,36 @@ def login(s: Settings) -> None:
         holder.close()
 
 
+def _set_page_view(page, view: str | None) -> None:
+    """Standardise Power BI's own zoom (View menu -> Fit to page / Fit to width / Actual size)
+    so a stray zoom left in the Edge window cannot change the crop."""
+    if not view:
+        return
+    import re as _re
+    try:
+        btn = page.get_by_role("button", name=_re.compile(r"^\s*View\s*$", _re.I)).filter(visible=True).first
+        if not btn.count():
+            btn = page.get_by_role("menuitem", name=_re.compile(r"^\s*View\s*$", _re.I)).filter(visible=True).first
+        if not btn.count():
+            print(f"  (View menu not found; page view left as is)", flush=True)
+            return
+        btn.click()
+        page.wait_for_timeout(600)
+        item = page.get_by_role("menuitem", name=_re.compile(rf"^\s*{_re.escape(view)}\s*$", _re.I)) \
+                   .filter(visible=True).first
+        if not item.count():
+            item = page.get_by_text(_re.compile(rf"^\s*{_re.escape(view)}\s*$", _re.I)).filter(visible=True).first
+        if item.count():
+            item.click()
+            print(f"  page view set to '{view}'", flush=True)
+        else:
+            page.keyboard.press("Escape")
+            print(f"  ('{view}' not in the View menu; page view left as is)", flush=True)
+        page.wait_for_timeout(800)
+    except Exception as e:  # noqa: BLE001
+        print(f"  (could not set page view: {e})", flush=True)
+
+
 def capture_pages(s: Settings, targets: list[tuple[PageSpec, Path]], headless: bool = True) -> None:
     """Screenshot several report pages in one browser session.
 
@@ -235,6 +265,9 @@ def capture_pages(s: Settings, targets: list[tuple[PageSpec, Path]], headless: b
             for i, (spec, png) in enumerate(targets):
                 _show_page(page, s, spec, first=(i == 0))
                 _wait_for_visuals(page, s.render_wait_ms)
+                if i == 0:
+                    _set_page_view(page, s.page_view)
+                    _wait_for_visuals(page, min(s.render_wait_ms, 3000))
                 _screenshot_page(page, spec, png)
         finally:
             holder.close()
